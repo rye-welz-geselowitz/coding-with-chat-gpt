@@ -1,0 +1,512 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Galactic Money Adventures</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+      animation: stars 20s infinite;
+    }
+    .stars-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1; /* Set a negative z-index to place it behind other content */
+        pointer-events: none; /* This ensures the stars don't block interactions with other elements */
+        animation: stars 20s infinite;
+    }
+
+    /* New styles for twinkling stars */
+    .stars-container::before,
+    .stars-container::after {
+      content: '';
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      background-color: transparent;
+      box-shadow: 200px 300px 3px #fff; /* Adjust shadow color and size for twinkling effect */
+      border-radius: 50%;
+      opacity: 0.8;
+    }
+    .stars-container::before {
+      animation: twinkling-stars 5s infinite;
+    }
+    .stars-container::after {
+      animation: twinkling-stars 7s infinite;
+    }
+    @keyframes stars {
+        0%, 100% {
+            background-color: #000; /* Dark background color */
+            background-image: radial-gradient(circle, #ffffff 2px, transparent 2px); /* Light stars */
+            background-size: 40px 40px; /* Increase size for larger stars */
+        }
+        25% {
+            background-color: #111; /* A slightly darker shade for the mid-animation */
+        }
+        50% {
+            background-color: #000; /* Back to the dark background */
+            background-image: radial-gradient(circle, #ffffff 1px, transparent 1px); /* Smaller light stars */
+            background-size: 20px 20px; /* Decrease size for smaller stars */
+        }
+        75% {
+            background-color: #111; /* A slightly darker shade for the mid-animation */
+        }
+    }
+    @keyframes twinkling-stars {
+      0%, 100% {
+        opacity: 0.8;
+        transform: scale(1);
+      }
+      50% {
+        opacity: 1;
+        transform: scale(1.2);
+      }
+    }
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      padding: 10px 20px;
+      background-color: #1d2c4e;
+      position: absolute;
+      top: 0;
+      left: 0;
+      color: #fff;
+    }
+    .top-bar span {
+      font-weight: bold;
+      margin-right: 20px;
+    }
+    .game-container {
+      text-align: center;
+    }
+    .button {
+      background-color: #66bb6a;
+      border: none;
+      color: #ffffff;
+      padding: 10px 20px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 16px;
+      margin: 10px;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+    .character {
+      display: none; /* Hide the character container initially */
+      margin-top: 180px;
+      background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent white background */
+      padding: 10px; /* Add some padding for spacing */
+      border-radius: 10px; /* Add border radius for rounded corners */
+      max-width: 80%; /* Set a maximum width for the container */
+    }
+    #character-canvas {
+      display: block; /* Override the default inline-block behavior */
+      margin: 0 auto;
+    }
+    .character-info {
+      text-align: center;
+      margin-top: 20px;
+    }
+    #game-container,
+    #game-over-container,
+    #character-container {
+      background-color: rgba(255, 255, 255, 0.9);
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    }
+    .hidden {
+      display: none;
+    }
+    .centered-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100%; /* Occupy the full height of the parent container */
+    }
+
+  </style>
+</head>
+<body>
+  <div class="stars-container"></div>
+  <div class="top-bar">
+    <span>Credit Score: <span id="credit-score">750</span></span>
+    <span>Wealth: <span id="wealth">$1000</span></span>
+  </div>
+  <div class="game-container" id="game-container">
+    <h1>Galactic Money Adventures</h1>
+    <p>Embark on an interstellar journey to financial wisdom and prosperity!</p>
+    <p>Your mission: Navigate the cosmos, maintain your credit score, and amass wealth while encountering quirky space characters.</p>
+    <button class="button" onclick="startGame()">Start Game</button>
+  </div>
+  <div class="character" id="character"> <!-- Removed class="hidden" -->
+    <canvas id="character-canvas" width="150" height="150" class="hidden"></canvas>
+    <div id="character-container" class="centered-container"> <!-- Removed class="hidden" -->
+      <div class="character-info"> <!-- Removed class="hidden" -->
+        <!-- Content of character info will be dynamically inserted here -->
+      </div>
+      
+    </div>
+  </div>
+
+  <script>
+
+const roundsData = [
+  {
+    name: "Loan Officer",
+    color: "#ffcc66",
+    scenario: "A shadowy figure emerges from cosmic shadows, offering a loan dripping with cosmic promises. Will you bite?<br><br><b>The Loan Shark grins:</b> Cosmic credits, quick riches, but beware the debt tendrils.",
+    acceptConsequence: { creditScore: -20, wealth: 500 },
+    declineConsequence: { creditScore: 10, wealth: 0 },
+    acceptDescription: "You delve into the cosmic abyss of loans. Credit score crumbles, wealth surges.",
+    declineDescription: "With defiance, you resist the cosmic lure. Credit score ascends, wealth holds.",
+  },
+  {
+    name: "Credit Card Representative",
+    color: "#66bb6a",
+    scenario: "A spectral trickster hands you a shimmering credit card, pulsating with forbidden allure. Will you succumb?<br><br><b>The Card Trickster smirks:</b> Cosmic credit, boundless extravagance, but beware the interest devourer.",
+    acceptConsequence: { creditScore: 10, wealth: 1000 },
+    declineConsequence: { creditScore: -20, wealth: 0 },
+    acceptDescription: "With starlight in your eyes, you embrace the forbidden card. Credit score blossoms, wealth expands.",
+    declineDescription: "With a knowing grin, you thwart the cosmic trick. Credit score soars, wealth remains intact.",
+  },
+  {
+    name: "Investment Advisor",
+    color: "#1d2c4e",
+    scenario: "An eccentric adviser thrusts a mysterious orb into your cosmic grasp, promising riches amid bizarre investments. Will you dance?<br><br><b>The Orb Whisperer croons:</b> Quantum riches, perilous unknowns, but riches lie within the cosmic chaos.",
+    acceptConsequence: { creditScore: 15, wealth: 1500 },
+    declineConsequence: { creditScore: -10, wealth: 0 },
+    acceptDescription: "With a smirk, you plunge into the swirling quantum abyss. Credit score rises, wealth flourishes.",
+    declineDescription: "Firmly, you reject the cosmic riddle. Credit score drops, wealth remains silent.",
+  },
+  {
+    name: "Savings Guru",
+    color: "#ff9966",
+    scenario: "A cosmic sage beckons you to a lunar challenge, where saving cosmic currency unfolds beneath enigmatic moonbeams. Will you heed?<br><br><b>The Lunar Sage intones:</b> Cosmic treasures, lunar rhythms, but beware the enigmatic lunar dance.",
+    acceptConsequence: { creditScore: 5, wealth: 200 },
+    declineConsequence: { creditScore: -5, wealth: 0 },
+    acceptDescription: "With cosmic fire, you journey through lunar mazes. Credit score glimmers, treasures blossom.",
+    declineDescription: "With cosmic clarity, you decline the lunar seduction. Credit score charts a different path, treasures unshaken.",
+  },
+];
+
+
+
+
+
+
+
+
+    let creditScore = 750;
+    let wealth = 1000;
+    let scenariosEncountered = [];
+
+    function startGame() {
+      document.getElementById('game-container').style.display = 'none';
+      document.getElementById('character').style.display = 'block'; // Show the character container
+      const canvas = document.getElementById('character-canvas');
+      canvas.classList.add('hidden');
+      clearCanvas();
+      showEncounter();
+    }
+
+    function displayNarrativeConsequences(round, action) {
+        const characterInfo = document.getElementById('character-container');
+
+        if (action === 'accept') {
+            creditScore += round.acceptConsequence.creditScore;
+            wealth += round.acceptConsequence.wealth;
+            updateStats();
+            characterInfo.innerHTML = `
+            <div class="character-info">
+                <h2>${round.name}</h2>
+                <p>${round.acceptDescription}</p>
+                <p>Credit Score ${round.acceptConsequence.creditScore > 0 ? '+' : ''}${round.acceptConsequence.creditScore}</p>
+                <p>Wealth ${round.acceptConsequence.wealth > 0 ? '+' : ''}$${round.acceptConsequence.wealth}</p>
+            </div>
+            `;
+        } else if (action === 'decline') {
+            creditScore += round.declineConsequence.creditScore;
+            wealth += round.declineConsequence.wealth;
+            updateStats();
+            characterInfo.innerHTML = `
+            <div class="character-info">
+                <h2>${round.name}</h2>
+                <p>${round.declineDescription}</p>
+                <p>Credit Score ${round.declineConsequence.creditScore > 0 ? '+' : ''}${round.declineConsequence.creditScore}</p>
+                <p>Wealth ${round.declineConsequence.wealth > 0 ? '+' : ''}$${round.declineConsequence.wealth}</p>
+            </div>
+            `;
+        }
+
+        setTimeout(() => showEncounter(), 3000); // Display the next encounter after 3 seconds
+        }
+
+
+
+    function updateStats() {
+        document.getElementById('credit-score').textContent = creditScore;
+        document.getElementById('wealth').textContent = '$' + wealth;
+
+        // Get the top bar element
+        const topBar = document.querySelector('.top-bar');
+
+        // Set the background color based on creditScore
+        if (creditScore >= 750) {
+            topBar.style.backgroundColor = '#66bb6a'; // Green for good score
+            topBar.style.color = '#fff'; // White text on green background
+        } else if (creditScore >= 650) {
+            topBar.style.backgroundColor = '#ffa726'; // Orange for okay score
+            topBar.style.color = '#000'; // Black text on orange background
+        } else {
+            topBar.style.backgroundColor = '#ef5350'; // Red for bad score
+            topBar.style.color = '#fff'; // White text on red background
+        }
+    }
+
+
+    function clearCanvas() {
+      const canvas = document.getElementById('character-canvas');
+      const context = canvas.getContext('2d');
+      context.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function drawEyes(context, x, y) {
+        context.beginPath();
+        context.arc(x - 5, y, 4, 0, Math.PI * 2, false); // Decrease 5 units from x for the left eye
+        context.arc(x + 5, y, 4, 0, Math.PI * 2, false); // Increase 5 units to x for the right eye
+        context.fillStyle = '#000';
+        context.fill();
+    }
+
+    function drawSmile(context, x, y) {
+      context.beginPath();
+      context.arc(x, y, 6, 0, Math.PI, false);
+      context.strokeStyle = '#000';
+      context.lineWidth = 1.5;
+      context.stroke();
+    }
+
+    function getRandomValue(min, max) {
+    return Math.random() * (max - min) + min;
+  }
+
+    function getRandomColor() {
+        const letters = '0123456789ABCDEF';
+        let color = '#';
+        for (let i = 0; i < 6; i++) {
+        color += letters[Math.floor(Math.random() * 16)];
+        }
+        return color;
+    }
+
+// Create an array of random alien-sounding names
+const alienNames = [
+    "Zoglar",
+    "Vorkon",
+    "Lixor",
+    "Grimgor",
+    "Nexia",
+    "Krazzax",
+    "Blipthor",
+    "Zarvox",
+    "Glopnar",
+    "Xytrix",
+    "Boltran",
+    "Flublar",
+    "Squiglor",
+    "Plutax",
+    "Vlarkon",
+    "Snorgar",
+    "Dorgor",
+    "Flarnax",
+    "Kloxar",
+    "Gronk",
+    "Splorg",
+    "Jaxnar",
+    "Vlugon",
+    "Zarlax",
+    "Krogax",
+    "Snixor",
+    "Zorgar",
+    "Glixar",
+    "Norbax",
+    "Gnarlok",
+    "Zinxor",
+    "Jiblar",
+    "Flibgor",
+    "Kloxor",
+    "Xarnax",
+    "Vlipthor",
+    "Nixor",
+    "Zlapnar",
+    "Borflax",
+];
+
+function drawCharacter(context, color) {
+    const width = getRandomValue(60, 80);
+    const height = getRandomValue(80, 120);
+
+    // Body
+    context.fillStyle = color;
+    context.fillRect(75 - width / 2, 150 - height, width, height);
+
+    // Head
+    context.beginPath();
+    context.arc(75, 60, 25, 0, Math.PI, false);
+    context.fillStyle = color;
+    context.fill();
+
+    // Eyes
+    drawEyes(context, 70, 55, getRandomValue(3, 5), getRandomValue(4, 6));
+    if (Math.random() < 0.8) {
+        drawEyes(context, 80, 55, getRandomValue(3, 5), getRandomValue(4, 6));
+    }
+
+    // Funky Hair
+    context.fillStyle = getRandomColor();
+    context.beginPath();
+    context.moveTo(50, 40);
+    context.lineTo(60, 20);
+    context.lineTo(70, 40);
+    context.lineTo(80, 20);
+    context.lineTo(90, 40);
+    context.lineTo(100, 20);
+    context.lineTo(110, 40);
+    context.fill();
+
+    // Arms
+    for (let i = 0; i < 2 + getRandomValue(0, 2); i++) {
+        const armX = i === 0 ? 75 - width / 2 - getRandomValue(10, 20) : 75 + width / 2 + getRandomValue(10, 20);
+        const armY = getRandomValue(60, 120);
+        context.beginPath();
+        context.moveTo(75, 60);
+        context.lineTo(armX, armY);
+        context.lineWidth = getRandomValue(2, 4);
+        context.strokeStyle = color;
+        context.stroke();
+    }
+
+    // Legs
+    for (let i = 0; i < 2 + getRandomValue(0, 2); i++) {
+        const legX = 75 + getRandomValue(-width / 2, width / 2);
+        const legY = 150 + getRandomValue(0, 30);
+        context.beginPath();
+        context.moveTo(75, 150);
+        context.lineTo(legX, legY);
+        context.lineWidth = getRandomValue(2, 4);
+        context.strokeStyle = color;
+        context.stroke();
+    }
+
+    // Alien Name
+    const alienName = alienNames[Math.floor(Math.random() * alienNames.length)];
+    context.fillStyle = '#000000';
+    context.font = '16px Arial';
+    context.textAlign = 'center';
+    context.fillText(`Hey there, I'm ${alienName}`, 75, 20);
+}
+
+
+
+
+
+
+    function showGameOver() {
+    document.getElementById('character-container').innerHTML = ''; // Clear the content
+    document.querySelector('.character').style.display = 'none';
+    document.getElementById('game-container').style.display = 'block';
+
+    const finalCreditScore = creditScore;
+    const finalWealth = wealth;
+    let gameOverMessage = '';
+
+    if (finalCreditScore >= 700 && finalWealth >= 3000) {
+        gameOverMessage = `
+            <h1>Galactic Money Adventures - Game Over</h1>
+            <p>Congratulations! You have achieved financial greatness in the cosmos!</p>
+            <p>Your Final Credit Score: ${finalCreditScore}</p>
+            <p>Your Final Wealth: $${finalWealth}</p>
+            <p>You are now the ruler of the financial universe! 🚀🌌💰</p>
+        `;
+    } else {
+        gameOverMessage = `
+            <h1>Galactic Money Adventures - Game Over</h1>
+            <p>Alas, your financial journey through the stars has ended with a bitter defeat.</p>
+            <p>Your Final Credit Score: ${finalCreditScore}</p>
+            <p>Your Final Wealth: $${finalWealth}</p>
+            <p>It seems the cosmos didn't favor your financial decisions...</p>
+            <p>Better luck next time! 😢</p>
+        `;
+    }
+
+    document.getElementById('game-container').innerHTML = gameOverMessage;
+    document.getElementById('character-container').classList.add('hidden');
+}
+
+
+
+
+    function showEncounter() {
+        if (scenariosEncountered.length === roundsData.length) {
+        showGameOver();
+        } else {
+        const availableRounds = roundsData.filter(
+            (round) => !scenariosEncountered.includes(round.name)
+        );
+        const randomRound = availableRounds[Math.floor(Math.random() * availableRounds.length)];
+
+        scenariosEncountered.push(randomRound.name);
+        clearCanvas();
+        const canvas = document.getElementById('character-canvas');
+        canvas.classList.remove('hidden');
+        const context = canvas.getContext('2d');
+        drawCharacter(context, randomRound.color);
+        const characterInfo = document.getElementById('character-container');
+        characterInfo.innerHTML = `
+            <div class="character-info">
+            <h2>${randomRound.name}</h2>
+            <p>${randomRound.scenario}</p>
+            <button class="button" id="accept-button">Accept</button>
+            <button class="button" id="decline-button">Decline</button>
+            </div>
+        `;
+
+        // Add event listeners for the buttons
+        document.getElementById('accept-button').addEventListener('click', () => displayNarrativeConsequences(randomRound, 'accept'));
+        document.getElementById('decline-button').addEventListener('click', () => displayNarrativeConsequences(randomRound, 'decline'));
+
+        }
+    }
+
+    function handleDecision(accept, round) {
+        if (accept) {
+        creditScore += round.acceptConsequence.creditScore;
+        wealth += round.acceptConsequence.wealth;
+        } else {
+        creditScore += round.declineConsequence.creditScore;
+        wealth += round.declineConsequence.wealth;
+        }
+
+        updateStats();
+        showEncounter();
+    }
+
+    updateStats(); // Initial update
+  </script>
+</body>
+</html>

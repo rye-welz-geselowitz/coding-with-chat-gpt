@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Character Creator</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+    body {
+        background-color: #f5f5f5;
+    }
+    .container {
+        margin-top: 50px;
+    }
+    canvas {
+        border: 2px solid #333;
+    }
+</style>
+</head>
+<body>
+<div class="container">
+    <div class="row">
+        <div class="col-md-6">
+            <h1>Character Creator</h1>
+            <canvas id="characterCanvas" width="300" height="400"></canvas>
+        </div>
+        <div class="col-md-6">
+            <h2>Customization Options</h2>
+            <label for="eyeSizeSlider" class="form-label">Eye Size</label>
+            <input type="range" class="form-range" id="eyeSizeSlider" min="5" max="25" step="1">
+            
+            <label for="skinColorPicker" class="form-label">Skin Color</label>
+            <input type="color" class="form-control form-control-color" id="skinColorPicker" value="#008000">
+            
+            <label for="hairColorPicker" class="form-label">Hair Color</label>
+            <input type="color" class="form-control form-control-color" id="hairColorPicker" value="#000000">
+            
+            <label for="bodyWidthSlider" class="form-label">Body Width</label>
+            <input type="range" class="form-range" id="bodyWidthSlider" min="50" max="150" step="1">
+
+            <button id="downloadButton" class="btn btn-primary mt-3">Download Character</button>
+
+        </div>
+    </div>
+</div>
+
+<script>
+
+    const canvas = document.getElementById('characterCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Draw character function
+    function drawCharacter(eyeSize, skinColor, hairColor, bodyWidth) {
+        // Clear canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+
+        // Event listener for the download button
+        document.getElementById('downloadButton').addEventListener('click', () => {
+            const downloadLink = document.createElement('a');
+            downloadLink.href = canvas.toDataURL('image/png'); // Convert canvas content to PNG image data
+            downloadLink.download = 'character.png'; // Set the downloaded file name
+            downloadLink.click(); // Simulate a click to trigger the download
+        });
+
+        // Draw head
+        ctx.fillStyle = skinColor;
+        ctx.beginPath();
+        ctx.arc(150, 100, 50, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Draw hair as three small triangles
+        ctx.fillStyle = hairColor;
+        const hairX = 125;
+        const hairTopY = 50; // Move hair up to 50px
+        const hairWidth = 50;
+        const hairHeight = 30;
+        ctx.beginPath();
+        ctx.moveTo(hairX, hairTopY);
+        ctx.lineTo(hairX + hairWidth / 4, hairTopY - hairHeight);
+        ctx.lineTo(hairX + hairWidth / 2, hairTopY);
+        ctx.lineTo(hairX, hairTopY);
+        ctx.moveTo(hairX + hairWidth / 2, hairTopY);
+        ctx.lineTo(hairX + 3 * hairWidth / 4, hairTopY - hairHeight);
+        ctx.lineTo(hairX + hairWidth, hairTopY);
+        ctx.lineTo(hairX + hairWidth / 2, hairTopY);
+        ctx.moveTo(hairX + hairWidth / 4, hairTopY);
+        ctx.lineTo(hairX + hairWidth / 2, hairTopY - hairHeight);
+        ctx.lineTo(hairX + 3 * hairWidth / 4, hairTopY);
+        ctx.closePath();
+        ctx.fill();
+
+        // Draw body
+        ctx.fillStyle = skinColor;
+        const bodyX = 150 - bodyWidth / 2;
+        const bodyY = 150; // Move body down to 150px
+        ctx.fillRect(bodyX, bodyY, bodyWidth, 120);
+
+        // Draw eyes
+        ctx.fillStyle = '#000'; // Black eye color
+        ctx.beginPath();
+        ctx.arc(130, 90, eyeSize, 0, Math.PI * 2);
+        ctx.arc(170, 90, eyeSize, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    // Event listeners
+    document.getElementById('eyeSizeSlider').addEventListener('input', updateCharacter);
+    document.getElementById('skinColorPicker').addEventListener('input', updateCharacter);
+    document.getElementById('hairColorPicker').addEventListener('input', updateCharacter);
+    document.getElementById('bodyWidthSlider').addEventListener('input', updateCharacter);
+
+    function updateCharacter() {
+        const eyeSize = parseInt(document.getElementById('eyeSizeSlider').value);
+        const skinColor = document.getElementById('skinColorPicker').value;
+        const hairColor = document.getElementById('hairColorPicker').value;
+        const bodyWidth = parseInt(document.getElementById('bodyWidthSlider').value);
+
+        drawCharacter(eyeSize, skinColor, hairColor, bodyWidth);
+    }
+
+    // Initial character drawing
+    updateCharacter();
+</script>
+</body>
+</html>
